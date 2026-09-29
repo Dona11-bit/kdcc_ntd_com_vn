@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kiểm Đồ Cuối Ca</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .tab-active {
+            border-bottom: 3px solid #ea580c;
+            color: #ea580c;
+            font-weight: 700;
+        }
+        /* Hide number input spinners on webkit browsers */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-orange-500 selection:text-white">
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="bg-slate-900 text-white shadow-md sticky top-0 z-30">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <button id="btn-toggle-sidebar" class="p-2 rounded-lg hover:bg-slate-800 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500" title="Menu chính">
+                    <i data-lucide="menu" class="w-6 h-6 text-orange-500"></i>
+                </button>
+                <div class="flex items-center space-x-2">
+                    <div class="bg-orange-600 text-white p-1.5 rounded-lg shadow-sm">
+                        <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                    </div>
+                    <h1 class="text-xl font-bold tracking-wide text-white">Kiểm Đồ Cuối Ca</h1>
+                </div>
+            </div>
+            
+            <div id="header-status" class="text-xs sm:text-sm font-medium bg-slate-800 text-orange-400 px-3 py-1.5 rounded-full border border-slate-700 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-orange-500 animate-pulse"></span>
+                <span id="current-view-title">Kiểm Đồ</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- SIDEBAR OVERLAY & MENU -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden transition-opacity duration-300"></div>
+    <aside id="sidebar" class="fixed top-0 left-0 bottom-0 w-72 bg-slate-900 text-slate-200 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out shadow-2xl flex flex-col">
+        <!-- Sidebar Header -->
+        <div class="p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="layers" class="w-6 h-6 text-orange-500"></i>
+                <span class="font-bold text-lg text-white">DANH MỤC</span>
+            </div>
+            <button id="btn-close-sidebar" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+        </div>
+
+        <!-- Sidebar Navigation Buttons -->
+        <nav class="p-4 space-y-2 flex-1 overflow-y-auto">
+            <button id="nav-kiem-do" class="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 bg-orange-600 text-white shadow-lg shadow-orange-600/30">
+                <i data-lucide="check-square" class="w-5 h-5"></i>
+                <span class="text-base">1. Kiểm Đồ</span>
+            </button>
+            
+            <button id="nav-ma-tem" class="w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white">
+                <i data-lucide="qr-code" class="w-5 h-5"></i>
+                <span class="text-base">2. Mã Tem</span>
+            </button>
+        </nav>
+
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+            Hệ thống Quản lý Kiểm kê Ca làm việc
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <main class="flex-1 max-w-5xl w-full mx-auto p-3 sm:p-6 space-y-6">
+
+        <!-- ==================== VIEW 1: KIỂM ĐỒ ==================== -->
+        <section id="view-kiem-do" class="space-y-6">
+            
+            <!-- Category Tabs / Filter Bar -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-2 sm:p-3 overflow-x-auto">
+                <div class="flex space-x-1 sm:space-x-2 min-w-max" id="category-tabs">
+                    <button data-cat="thit-tuoi" class="cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 bg-orange-50 text-orange-600 border border-orange-200">
+                        <i data-lucide="beef" class="w-4 h-4"></i>
+                        Thịt Tươi
+                    </button>
+                    <button data-cat="sot" class="cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 text-slate-600 hover:bg-slate-100">
+                        <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                        Sốt
+                    </button>
+                    <button data-cat="kho-mat" class="cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 text-slate-600 hover:bg-slate-100">
+                        <i data-lucide="thermometer-snowflake" class="w-4 h-4"></i>
+                        Kho Mát
+                    </button>
+                    <button data-cat="set-up" class="cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 text-slate-600 hover:bg-slate-100">
+                        <i data-lucide="grid" class="w-4 h-4"></i>
+                        Set up trên hộc
+                    </button>
+                    <button data-cat="tu-dong" class="cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 text-slate-600 hover:bg-slate-100">
+                        <i data-lucide="snowflake" class="w-4 h-4"></i>
+                        Tủ Đông
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Action Toolbar -->
+            <div class="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                <div class="relative flex-1">
+                    <i data-lucide="search" class="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="input-search-items" placeholder="Tìm kiếm nhanh sản phẩm..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm">
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-reset-amounts" class="px-3.5 py-2.5 text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 rounded-xl text-sm font-medium transition-colors flex items-center gap-1.5 border border-slate-200" title="Đặt lại số lượng kiểm về 0">
+                        <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Xóa nhập</span>
+                    </button>
+                    <button id="btn-export-summary" class="flex-1 sm:flex-none px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md shadow-emerald-600/20 flex items-center justify-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4"></i>
+                        <span>Xem Báo Cáo</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Items Container Grid -->
+            <div id="items-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamically Rendered by JS -->
+            </div>
+        </section>
+
+        <!-- ==================== VIEW 2: MÃ TEM ==================== -->
+        <section id="view-ma-tem" class="space-y-6 hidden">
+            <!-- Header for Ma Tem View -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="qr-code" class="w-6 h-6 text-orange-600"></i>
+                        Quản Lý Mã Tem & Hình Ảnh Sản Phẩm
+                    </h2>
+                    <p class="text-sm text-slate-500 mt-1">Thêm ảnh sản phẩm, tùy chỉnh tên hiển thị và cập nhật thông tin tem nhãn.</p>
+                </div>
+                <button id="btn-add-new-tem" class="px-4 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-semibold text-sm rounded-xl transition-all shadow-md shadow-orange-600/20 flex items-center justify-center gap-2 self-start sm:self-auto">
+                    <i data-lucide="plus-circle" class="w-5 h-5"></i>
+                    <span>Thêm Mẫu Tem Mới</span>
+                </button>
+            </div>
+
+            <!-- Filter Categories in Ma Tem -->
+            <div class="flex items-center gap-2 overflow-x-auto pb-1" id="tem-category-filter">
+                <!-- Dynamically generated or static filters -->
+                <button data-tem-cat="all" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-slate-900 text-white border border-slate-900">Tất cả sản phẩm</button>
+                <button data-tem-cat="thit-tuoi" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Thịt tươi</button>
+                <button data-tem-cat="sot" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Sốt</button>
+                <button data-tem-cat="kho-mat" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Kho Mát</button>
+                <button data-tem-cat="set-up" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Set up hộc</button>
+                <button data-tem-cat="tu-dong" class="tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50">Tủ đông</button>
+            </div>
+
+            <!-- Tem Cards Grid -->
+            <div id="tem-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <!-- Dynamically Rendered by JS -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- MODAL BÁO CÁO KẾT QUẢ KIỂM ĐỒ -->
+    <div id="modal-report" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="bg-slate-900 text-white p-4 sm:p-5 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="clipboard-list" class="w-6 h-6 text-orange-500"></i>
+                    <h3 class="text-lg font-bold">Báo Cáo Kiểm Đồ Cuối Ca</h3>
+                </div>
+                <button id="btn-close-report" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content -->
+            <div class="p-5 overflow-y-auto space-y-6 flex-1 text-slate-800" id="report-content">
+                <!-- Generated Report Summary JS -->
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row gap-2 justify-end">
+                <button id="btn-copy-report" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl font-medium text-sm transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="copy" class="w-4 h-4"></i>
+                    <span>Sao Chép Văn Bản</span>
+                </button>
+                <button id="btn-done-report" class="px-5 py-2.5 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-semibold text-sm transition-colors flex items-center justify-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    <span>Xác Nhận Đã Kiểm</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL THÊM SẢN PHẨM MỚI CHO MÃ TEM -->
+    <div id="modal-add-tem" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="bg-slate-900 text-white p-4 flex items-center justify-between">
+                <h3 class="text-lg font-bold flex items-center gap-2">
+                    <i data-lucide="plus-circle" class="w-5 h-5 text-orange-500"></i>
+                    Thêm Mã Tem Sản Phẩm Mới
+                </h3>
+                <button id="btn-close-add-tem" class="text-slate-400 hover:text-white">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+            
+            <form id="form-add-tem" class="p-5 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Danh mục sản phẩm</label>
+                    <select id="new-item-cat" class="w-full p-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                        <option value="thit-tuoi">Thịt tươi</option>
+                        <option value="sot">Sốt</option>
+                        <option value="kho-mat">Kho Mát</option>
+                        <option value="set-up">Set up trên hộc</option>
+                        <option value="tu-dong">Tủ đông</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Tên loại sản phẩm</label>
+                    <input type="text" id="new-item-name" required placeholder="Nhập tên sản phẩm..." class="w-full p-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-orange-500 focus:outline-none">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase mb-1">Hình ảnh mẫu tem (Tùy chọn)</label>
+                    <input type="file" id="new-item-image" accept="image/*" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100 cursor-pointer">
+                </div>
+
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" id="btn-cancel-add-tem" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-xl">Hủy</button>
+                    <button type="submit" class="px-5 py-2 bg-orange-600 hover:bg-orange-700 text-white text-sm font-semibold rounded-xl shadow-md shadow-orange-600/20">Lưu Mới</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // Initial Default Items Configuration Data Structure
+        const DEFAULT_CATEGORIES = {
+            'thit-tuoi': {
+                name: 'Thịt tươi',
+                icon: 'beef',
+                items: [
+                    'Rẻ sườn tươi',
+                    'Rẻ sườn hoàng đế',
+                    'Heo',
+                    'Ba chỉ heo',
+                    'Lõi vai bò',
+                    'Gù',
+                    'La chill',
+                    'Diềm cơ bụng'
+                ]
+            },
+            'sot': {
+                name: 'Sốt',
+                icon: 'flask-conical',
+                items: [
+                    'Rẻ sườn sốt gabi',
+                    'Bẹ',
+                    'La sốt gabi',
+                    'Gà',
+                    'Nạc vai heo sốt gabi'
+                ]
+            },
+            'kho-mat': {
+                name: 'Kho Mát',
+                icon: 'thermometer-snowflake',
+                items: [
+                    'Rẻ sườn gabi',
+                    'Sườn la gabi',
+                    'Nạc vai heo gabi',
+                    'Gà',
+                    'Bẹ'
+                ]
+            },
+            'set-up': {
+                name: 'Set up trên hộc',
+                icon: 'grid',
+                items: [
+                    'Rẻ sườn tươi',
+                    'Rẻ sườn hoàng đế',
+                    'Rẻ sườn sốt gabi',
+                    'Má heo',
+                    'Ba chỉ heo',
+                    'Nạc vai heo sốt gabi',
+                    'Gù',
+                    'Lõi vai bò',
+                    'Diềm cơ bụng',
+                    'Gà',
+                    'Sườn la',
+                    'Sườn la sốt gabi',
+                    'Bẹ'
+                ]
+            },
+            'tu-dong': {
+                name: 'Tủ Đông',
+                icon: 'snowflake',
+                items: [
+                    'Ba chỉ bò bào cuộn',
+                    'Ba chỉ bò bào mỏng',
+                    'Gù bò bào cuộn',
+                    'Gù bò bào mỏng',
+                    'Nạc vai heo cuộn',
+                    'Ba chỉ heo bào cuộn',
+                    'Thăn cổ bò',
+                    'Sườn la ALC',
+                    'Sườn 7cm',
+                    'Sườn 15cm',
+                    'Tôm',
+                    'Hảo hạng'
+                ]
+            }
+        };
+
+        // Application State Management
+        let appData = {
+            products: [], // Array of product objects { id, categoryId, name, quantity, image }
+            activeCategory: 'thit-tuoi',
+            activeTemFilter: 'all',
+            searchQuery: ''
+        };
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            loadStoredData();
+            initLucideIcons();
+            setupEventListeners();
+            renderApp();
+        });
+
+        // Initialize or Load from LocalStorage
+        function loadStoredData() {
+            const savedData = localStorage.getItem('kiem_do_cuoi_ca_data');
+            if (savedData) {
+                try {
+                    appData.products = JSON.parse(savedData);
+                } catch (e) {
+                    console.error("Lỗi khi tải dữ liệu từ localStorage", e);
+                    generateInitialData();
+                }
+            } else {
+                generateInitialData();
+            }
+        }
+
+        // Generate initial products structure from initial config
+        function generateInitialData() {
+            appData.products = [];
+            let idCounter = 1;
+
+            Object.keys(DEFAULT_CATEGORIES).forEach(catId => {
+                DEFAULT_CATEGORIES[catId].items.forEach(itemName => {
+                    appData.products.push({
+                        id: `prod_${idCounter++}`,
+                        categoryId: catId,
+                        name: itemName,
+                        quantity: 0,
+                        image: null // Data URL string or null
+                    });
+                });
+            });
+
+            saveData();
+        }
+
+        // Save current products to localStorage
+        function saveData() {
+            localStorage.setItem('kiem_do_cuoi_ca_data', JSON.stringify(appData.products));
+        }
+
+        function initLucideIcons() {
+            if (window.lucide) {
+                lucide.createIcons();
+            }
+        }
+
+        // Event Listeners Registration
+        function setupEventListeners() {
+            // Sidebar toggle buttons
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            const btnToggle = document.getElementById('btn-toggle-sidebar');
+            const btnClose = document.getElementById('btn-close-sidebar');
+
+            function openSidebar() {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            }
+
+            function closeSidebar() {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+
+            btnToggle.addEventListener('click', openSidebar);
+            btnClose.addEventListener('click', closeSidebar);
+            overlay.addEventListener('click', closeSidebar);
+
+            // Navigation tabs switching
+            const navKiemDo = document.getElementById('nav-kiem-do');
+            const navMaTem = document.getElementById('nav-ma-tem');
+            const viewKiemDo = document.getElementById('view-kiem-do');
+            const viewMaTem = document.getElementById('view-ma-tem');
+            const headerTitle = document.getElementById('current-view-title');
+
+            navKiemDo.addEventListener('click', () => {
+                switchView('kiem-do');
+                closeSidebar();
+            });
+
+            navMaTem.addEventListener('click', () => {
+                switchView('ma-tem');
+                closeSidebar();
+            });
+
+            function switchView(viewName) {
+                if (viewName === 'kiem-do') {
+                    viewKiemDo.classList.remove('hidden');
+                    viewMaTem.classList.add('hidden');
+                    headerTitle.textContent = 'Kiểm Đồ';
+
+                    navKiemDo.className = "w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 bg-orange-600 text-white shadow-lg shadow-orange-600/30";
+                    navMaTem.className = "w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white";
+                } else {
+                    viewKiemDo.classList.add('hidden');
+                    viewMaTem.classList.remove('hidden');
+                    headerTitle.textContent = 'Mã Tem';
+
+                    navMaTem.className = "w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 bg-orange-600 text-white shadow-lg shadow-orange-600/30";
+                    navKiemDo.className = "w-full flex items-center space-x-3 px-4 py-3.5 rounded-xl text-left font-medium transition-all duration-200 text-slate-300 hover:bg-slate-800 hover:text-white";
+                }
+            }
+
+            // Category Tab Buttons click in Kiểm Đồ View
+            const catTabsContainer = document.getElementById('category-tabs');
+            catTabsContainer.addEventListener('click', (e) => {
+                const button = e.target.closest('.cat-tab');
+                if (!button) return;
+
+                const catId = button.getAttribute('data-cat');
+                appData.activeCategory = catId;
+
+                // Update UI tab active state
+                document.querySelectorAll('.cat-tab').forEach(tab => {
+                    if (tab.getAttribute('data-cat') === catId) {
+                        tab.className = "cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 bg-orange-50 text-orange-600 border border-orange-200";
+                    } else {
+                        tab.className = "cat-tab px-4 py-2.5 rounded-xl font-semibold text-sm sm:text-base transition-all duration-150 flex items-center gap-2 text-slate-600 hover:bg-slate-100";
+                    }
+                });
+
+                renderItemsGrid();
+            });
+
+            // Search Filter Listener
+            const searchInput = document.getElementById('input-search-items');
+            searchInput.addEventListener('input', (e) => {
+                appData.searchQuery = e.target.value.toLowerCase().trim();
+                renderItemsGrid();
+            });
+
+            // Reset Amounts Button
+            document.getElementById('btn-reset-amounts').addEventListener('click', () => {
+                if (confirm('Bạn có chắc chắn muốn đặt tất cả số lượng sản phẩm kiểm về 0 không?')) {
+                    appData.products.forEach(p => p.quantity = 0);
+                    saveData();
+                    renderItemsGrid();
+                }
+            });
+
+            // Report Modal Actions
+            const modalReport = document.getElementById('modal-report');
+            document.getElementById('btn-export-summary').addEventListener('click', openReportModal);
+            document.getElementById('btn-close-report').addEventListener('click', () => modalReport.classList.add('hidden'));
+            document.getElementById('btn-done-report').addEventListener('click', () => modalReport.classList.add('hidden'));
+
+            document.getElementById('btn-copy-report').addEventListener('click', copyReportText);
+
+            // Filter buttons in Mã Tem view
+            document.getElementById('tem-category-filter').addEventListener('click', (e) => {
+                const btn = e.target.closest('.tem-filter-btn');
+                if (!btn) return;
+
+                const catFilter = btn.getAttribute('data-tem-cat');
+                appData.activeTemFilter = catFilter;
+
+                document.querySelectorAll('.tem-filter-btn').forEach(b => {
+                    if (b.getAttribute('data-tem-cat') === catFilter) {
+                        b.className = "tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-slate-900 text-white border border-slate-900";
+                    } else {
+                        b.className = "tem-filter-btn px-4 py-2 rounded-xl text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50";
+                    }
+                });
+
+                renderTemGrid();
+            });
+
+            // Add New Tem Modal handling
+            const modalAddTem = document.getElementById('modal-add-tem');
+            document.getElementById('btn-add-new-tem').addEventListener('click', () => modalAddTem.classList.remove('hidden'));
+            document.getElementById('btn-close-add-tem').addEventListener('click', () => modalAddTem.classList.add('hidden'));
+            document.getElementById('btn-cancel-add-tem').addEventListener('click', () => modalAddTem.classList.add('hidden'));
+
+            document.getElementById('form-add-tem').addEventListener('submit', handleAddNewItem);
+        }
+
+        // Render main grid based on selected category and search filter
+        function renderItemsGrid() {
+            const grid = document.getElementById('items-grid');
+            grid.innerHTML = '';
+
+            let filtered = appData.products.filter(p => p.categoryId === appData.activeCategory);
+
+            if (appData.searchQuery) {
+                filtered = appData.products.filter(p => p.name.toLowerCase().includes(appData.searchQuery));
+            }
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300 p-6">
+                        <i data-lucide="package-x" class="w-12 h-12 mx-auto mb-2 opacity-50"></i>
+                        <p class="text-base font-medium">Không tìm thấy sản phẩm nào</p>
+                    </div>
+                `;
+                initLucideIcons();
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl p-4 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between space-y-3";
+
+                // Quantity Input & Stepper buttons (allows 0.1 to 100 with step 0.1)
+                card.innerHTML = `
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex-1">
+                            <span class="inline-block px-2 py-0.5 text-[10px] font-bold rounded-md uppercase tracking-wider bg-slate-100 text-slate-600 mb-1">
+                                ${DEFAULT_CATEGORIES[item.categoryId]?.name || 'Khác'}
+                            </span>
+                            <h3 class="font-bold text-slate-800 text-base leading-snug">${escapeHtml(item.name)}</h3>
+                        </div>
+                        ${item.image ? `<img src="${item.image}" class="w-12 h-12 object-cover rounded-lg border border-slate-200 flex-shrink-0" alt="Mẫu tem">` : ''}
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-100 flex items-center justify-between">
+                        <span class="text-xs font-semibold text-slate-500 uppercase">Số lượng:</span>
+                        <div class="flex items-center space-x-1.5 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                            <button class="btn-step-minus w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-700 hover:bg-orange-50 hover:text-orange-600 shadow-sm border border-slate-200 transition-colors font-bold" data-id="${item.id}">
+                                <i data-lucide="minus" class="w-4 h-4"></i>
+                            </button>
+                            <input type="number" 
+                                min="0" 
+                                max="100" 
+                                step="0.1" 
+                                value="${item.quantity}" 
+                                data-id="${item.id}" 
+                                class="input-qty w-16 text-center font-bold text-slate-800 text-base bg-transparent focus:outline-none focus:bg-white focus:rounded-md py-0.5" 
+                                placeholder="0">
+                            <button class="btn-step-plus w-8 h-8 flex items-center justify-center rounded-lg bg-white text-slate-700 hover:bg-orange-50 hover:text-orange-600 shadow-sm border border-slate-200 transition-colors font-bold" data-id="${item.id}">
+                                <i data-lucide="plus" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            // Bind Event Listeners for stepper and inputs
+            grid.querySelectorAll('.btn-step-minus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    updateItemQuantity(id, -0.1);
+                });
+            });
+
+            grid.querySelectorAll('.btn-step-plus').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    updateItemQuantity(id, 0.1);
+                });
+            });
+
+            grid.querySelectorAll('.input-qty').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    let val = parseFloat(e.target.value) || 0;
+                    if (val < 0) val = 0;
+                    if (val > 100) val = 100;
+                    val = Math.round(val * 10) / 10;
+                    e.target.value = val;
+                    setItemQuantityDirect(id, val);
+                });
+            });
+
+            initLucideIcons();
+        }
+
+        function updateItemQuantity(id, delta) {
+            const item = appData.products.find(p => p.id === id);
+            if (item) {
+                let current = parseFloat(item.quantity) || 0;
+                let nextVal = Math.round((current + delta) * 10) / 10;
+                if (nextVal < 0) nextVal = 0;
+                if (nextVal > 100) nextVal = 100;
+                item.quantity = nextVal;
+                saveData();
+                renderItemsGrid();
+            }
+        }
+
+        function setItemQuantityDirect(id, value) {
+            const item = appData.products.find(p => p.id === id);
+            if (item) {
+                item.quantity = value;
+                saveData();
+            }
+        }
+
+        // Render Mã Tem View Grid
+        function renderTemGrid() {
+            const grid = document.getElementById('tem-grid');
+            grid.innerHTML = '';
+
+            let filtered = appData.products;
+            if (appData.activeTemFilter !== 'all') {
+                filtered = appData.products.filter(p => p.categoryId === appData.activeTemFilter);
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm flex flex-col justify-between p-4 space-y-3";
+
+                const imageContent = item.image 
+                    ? `<div class="relative group rounded-xl overflow-hidden bg-slate-100 aspect-square flex items-center justify-center border border-slate-200">
+                        <img src="${item.image}" class="w-full h-full object-cover" alt="${escapeHtml(item.name)}">
+                        <button data-id="${item.id}" class="btn-delete-img absolute top-2 right-2 p-1.5 bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity shadow-md" title="Xóa ảnh">
+                            <i data-lucide="trash-2" class="w-4 h-4"></i>
+                        </button>
+                       </div>`
+                    : `<label class="cursor-pointer border-2 border-dashed border-slate-300 hover:border-orange-500 rounded-xl aspect-square flex flex-col items-center justify-center bg-slate-50 hover:bg-orange-50/30 transition-colors p-4 text-center group">
+                        <i data-lucide="image-plus" class="w-8 h-8 text-slate-400 group-hover:text-orange-500 mb-2"></i>
+                        <span class="text-xs font-semibold text-slate-500 group-hover:text-orange-600">Bấm để thêm ảnh mẫu tem</span>
+                        <input type="file" accept="image/*" class="input-upload-image hidden" data-id="${item.id}">
+                       </label>`;
+
+                card.innerHTML = `
+                    <!-- Image Box -->
+                    ${imageContent}
+
+                    <!-- Editable Product Name -->
+                    <div class="space-y-1">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">${DEFAULT_CATEGORIES[item.categoryId]?.name || 'Khác'}</span>
+                        <div class="flex items-center space-x-1">
+                            <input type="text" value="${escapeHtml(item.name)}" data-id="${item.id}" class="input-edit-name font-bold text-slate-800 text-sm w-full bg-transparent hover:bg-slate-50 focus:bg-white focus:ring-2 focus:ring-orange-500 rounded-lg px-2 py-1 border border-transparent focus:border-slate-300 transition-all">
+                            <i data-lucide="pencil" class="w-3.5 h-3.5 text-slate-400 flex-shrink-0"></i>
+                        </div>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+
+            // Bind Tem events
+            grid.querySelectorAll('.input-upload-image').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            const item = appData.products.find(p => p.id === id);
+                            if (item) {
+                                item.image = evt.target.result;
+                                saveData();
+                                renderTemGrid();
+                                renderItemsGrid();
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            });
+
+            grid.querySelectorAll('.btn-delete-img').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    const item = appData.products.find(p => p.id === id);
+                    if (item && confirm('Bạn có muốn xóa hình ảnh tem này?')) {
+                        item.image = null;
+                        saveData();
+                        renderTemGrid();
+                        renderItemsGrid();
+                    }
+                });
+            });
+
+            grid.querySelectorAll('.input-edit-name').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = e.target.getAttribute('data-id');
+                    const newName = e.target.value.trim();
+                    if (newName) {
+                        const item = appData.products.find(p => p.id === id);
+                        if (item) {
+                            item.name = newName;
+                            saveData();
+                            renderItemsGrid();
+                        }
+                    }
+                });
+            });
+
+            initLucideIcons();
+        }
+
+        // Add new tem product item handler
+        function handleAddNewItem(e) {
+            e.preventDefault();
+            const catId = document.getElementById('new-item-cat').value;
+            const name = document.getElementById('new-item-name').value.trim();
+            const fileInput = document.getElementById('new-item-image');
+
+            if (!name) return;
+
+            const newItem = {
+                id: `prod_${Date.now()}`,
+                categoryId: catId,
+                name: name,
+                quantity: 0,
+                image: null
+            };
+
+            const finalize = () => {
+                appData.products.push(newItem);
+                saveData();
+                document.getElementById('form-add-tem').reset();
+                document.getElementById('modal-add-tem').classList.add('hidden');
+                renderTemGrid();
+                renderItemsGrid();
+            };
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    newItem.image = evt.target.result;
+                    finalize();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                finalize();
+            }
+        }
+
+        // Open Modal Report Summary
+        function openReportModal() {
+            const container = document.getElementById('report-content');
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            const dateStr = now.toLocaleDateString('vi-VN');
+
+            // Gather active items (quantity > 0)
+            const activeItems = appData.products.filter(p => parseFloat(p.quantity) > 0);
+
+            let html = `
+                <div class="bg-orange-50 border border-orange-200 rounded-xl p-3 flex justify-between items-center text-xs font-semibold text-orange-900">
+                    <span>Thời gian xuất: ${timeStr} - ${dateStr}</span>
+                    <span>Tổng sản phẩm đã nhập: ${activeItems.length}</span>
+                </div>
+            `;
+
+            if (activeItems.length === 0) {
+                html += `
+                    <div class="text-center py-8 text-slate-400">
+                        <i data-lucide="info" class="w-10 h-10 mx-auto mb-2 opacity-50"></i>
+                        <p class="font-medium text-slate-600">Chưa có sản phẩm nào được nhập số lượng (> 0)</p>
+                        <p class="text-xs text-slate-400 mt-1">Hãy nhập số lượng kiểm kê trước khi bấm xem báo cáo.</p>
+                    </div>
+                `;
+            } else {
+                // Group by Category
+                Object.keys(DEFAULT_CATEGORIES).forEach(catId => {
+                    const catItems = activeItems.filter(p => p.categoryId === catId);
+                    if (catItems.length > 0) {
+                        html += `
+                            <div class="border border-slate-200 rounded-xl overflow-hidden">
+                                <div class="bg-slate-100 px-4 py-2 font-bold text-xs uppercase text-slate-700 border-b border-slate-200 flex items-center justify-between">
+                                    <span>${DEFAULT_CATEGORIES[catId].name}</span>
+                                    <span class="text-orange-600">${catItems.length} mục</span>
+                                </div>
+                                <div class="divide-y divide-slate-100">
+                                    ${catItems.map(item => `
+                                        <div class="px-4 py-2.5 flex justify-between items-center text-sm">
+                                            <span class="font-medium text-slate-800">${escapeHtml(item.name)}</span>
+                                            <span class="font-bold text-orange-600 bg-orange-50 px-2.5 py-0.5 rounded-md border border-orange-200">${item.quantity}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            container.innerHTML = html;
+            document.getElementById('modal-report').classList.remove('hidden');
+            initLucideIcons();
+        }
+
+        // Copy plain text summary report to Clipboard
+        function copyReportText() {
+            const activeItems = appData.products.filter(p => parseFloat(p.quantity) > 0);
+            if (activeItems.length === 0) {
+                alert('Không có dữ liệu số lượng kiểm kê để sao chép!');
+                return;
+            }
+
+            const now = new Date();
+            let text = `=== BÁO CÁO KIỂM ĐỒ CUỐI CA (${now.toLocaleTimeString('vi-VN', {hour: '2-digit', minute:'2-digit'})} - ${now.toLocaleDateString('vi-VN')}) ===\n\n`;
+
+            Object.keys(DEFAULT_CATEGORIES).forEach(catId => {
+                const catItems = activeItems.filter(p => p.categoryId === catId);
+                if (catItems.length > 0) {
+                    text += `📌 ${DEFAULT_CATEGORIES[catId].name.toUpperCase()}:\n`;
+                    catItems.forEach(item => {
+                        text += `  - ${item.name}: ${item.quantity}\n`;
+                    });
+                    text += `\n`;
+                }
+            });
+
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Đã sao chép báo cáo kiểm đồ vào khay nhớ tạm!');
+            }).catch(err => {
+                console.error('Lỗi khi sao chép:', err);
+            });
+        }
+
+        // Main App Render Dispatcher
+        function renderApp() {
+            renderItemsGrid();
+            renderTemGrid();
+        }
+
+        // Helper to prevent HTML Injection
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, function(m) {
+                return {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                }[m];
+            });
+        }
+    </script>
+</body>
+</html>
